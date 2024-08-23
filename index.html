@@ -43,7 +43,6 @@
         const uploadForm = document.getElementById('upload-form');
         const imageContainer = document.getElementById('image-container');
 
-
         uploadForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -59,20 +58,18 @@
                 return;
             }
 
-            console.log('File:', file.name);
-            console.log('Number of slices:', numberOfSlices);
-
             try {
                 const originalBlobUrl = URL.createObjectURL(file);
                 const img = new Image();
                 img.src = originalBlobUrl;
 
-                await img.decode();
-                console.log('Image:', img.width, 'x', img.height);
+                await new Promise((resolve) => {
+                    img.onload = resolve;
+                });
 
                 const sliceWidth = img.width / numberOfSlices;
                 for (let i = 0; i < numberOfSlices; i++) {
-                    const sliceBlob = await splitImageBlob(file, i * sliceWidth, sliceWidth);
+                    const sliceBlob = await splitImageBlob(file, img, i * sliceWidth, sliceWidth);
                     renderBlob(sliceBlob, `slice-${i + 1}.png`);
                 }
 
@@ -82,13 +79,7 @@
             }
         });
 
-        async function splitImageBlob(blob, startX, width) {
-            console.log(`Splitting image from ${startX}px to ${startX + width}px`);
-
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(blob);
-            await img.decode();
-
+        async function splitImageBlob(blob, img, startX, width) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Canvas context is not available');
@@ -99,14 +90,32 @@
             ctx.drawImage(img, startX, 0, width, img.height, 0, 0, width, img.height);
 
             return new Promise((resolve) => {
-                canvas.toBlob((newBlob) => {
-                    if (newBlob) {
-                        resolve(newBlob);
-                    } else {
-                        console.error('Failed to create blob.');
-                    }
-                }, blob.type);
+                if (canvas.toBlob) {
+                    canvas.toBlob((newBlob) => {
+                        if (newBlob) {
+                            resolve(newBlob);
+                        } else {
+                            console.error('Failed to create blob.');
+                        }
+                    }, blob.type);
+                } else {
+                    // Fallback for Safari/iOS which might not support toBlob
+                    const dataUrl = canvas.toDataURL(blob.type);
+                    const newBlob = dataURLToBlob(dataUrl);
+                    resolve(newBlob);
+                }
             });
+        }
+
+        function dataURLToBlob(dataURL) {
+            const byteString = atob(dataURL.split(',')[1]);
+            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+            const buffer = new ArrayBuffer(byteString.length);
+            const dataView = new Uint8Array(buffer);
+            for (let i = 0; i < byteString.length; i++) {
+                dataView[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([buffer], { type: mimeString });
         }
 
         function renderBlob(blob, filename) {
@@ -115,7 +124,6 @@
             img.src = url;
             img.addEventListener('click', () => downloadBlob(blob, filename));
             imageContainer.appendChild(img);
-            console.log(`Rendered image: ${filename}`);
         }
 
         function downloadBlob(blob, filename) {
@@ -126,7 +134,6 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(a.href);
-            console.log(`Downloaded image: ${filename}`);
         }
     </script>
 </body>
