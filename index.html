@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Splitter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        img {
+            max-width: 45%;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Splitter</h1>
+    <p>Split the input image in the browser.</p>
+    <form id="upload-form">
+        <label for="file-input">Image:</label>
+        <input type="file" id="file-input" accept="image/*" />
+        <br/><br/>
+        <label for="slice-input">Number of parts:</label>
+        <input type="number" id="slice-input" value="2" min="1" max="10" />
+        <br/><br/>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="image-container"></div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const sliceInput = document.getElementById('slice-input');
+        const uploadForm = document.getElementById('upload-form');
+        const imageContainer = document.getElementById('image-container');
+
+
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            imageContainer.innerHTML = '';
+
+            const file = fileInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            const numberOfSlices = parseInt(sliceInput.value);
+            if (isNaN(numberOfSlices) || numberOfSlices < 1) {
+                return;
+            }
+
+            console.log('File:', file.name);
+            console.log('Number of slices:', numberOfSlices);
+
+            try {
+                const originalBlobUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.src = originalBlobUrl;
+
+                await img.decode();
+                console.log('Image:', img.width, 'x', img.height);
+
+                const sliceWidth = img.width / numberOfSlices;
+                for (let i = 0; i < numberOfSlices; i++) {
+                    const sliceBlob = await splitImageBlob(file, i * sliceWidth, sliceWidth);
+                    renderBlob(sliceBlob, `slice-${i + 1}.png`);
+                }
+
+                URL.revokeObjectURL(originalBlobUrl);
+            } catch (error) {
+                console.error('Error during image processing:', error);
+            }
+        });
+
+        async function splitImageBlob(blob, startX, width) {
+            console.log(`Splitting image from ${startX}px to ${startX + width}px`);
+
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            await img.decode();
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas context is not available');
+
+            canvas.width = width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, startX, 0, width, img.height, 0, 0, width, img.height);
+
+            return new Promise((resolve) => {
+                canvas.toBlob((newBlob) => {
+                    if (newBlob) {
+                        resolve(newBlob);
+                    } else {
+                        console.error('Failed to create blob.');
+                    }
+                }, blob.type);
+            });
+        }
+
+        function renderBlob(blob, filename) {
+            const img = document.createElement('img');
+            const url = URL.createObjectURL(blob);
+            img.src = url;
+            img.addEventListener('click', () => downloadBlob(blob, filename));
+            imageContainer.appendChild(img);
+            console.log(`Rendered image: ${filename}`);
+        }
+
+        function downloadBlob(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            console.log(`Downloaded image: ${filename}`);
+        }
+    </script>
+</body>
+</html>
