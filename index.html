@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h1>Image Splitter v0.1.4</h1>
+    <h1>Image Splitter v0.1.5</h1>
     <p>Split the input image in the browser.</p>
     <form id="upload-form">
         <label for="file-input">Image:</label>
@@ -65,12 +65,45 @@
                 img.src = e.target.result;
 
                 img.onload = function() {
-                    processImage(img, numberOfSlices);
+                    const { width, height } = getResizedDimensions(img.width, img.height);
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const resizedDataUrl = canvas.toDataURL('image/png');
+                    const resizedImg = new Image();
+                    resizedImg.src = resizedDataUrl;
+
+                    resizedImg.onload = function() {
+                        processImage(resizedImg, numberOfSlices);
+                    };
                 };
             };
 
             reader.readAsDataURL(file);
         });
+
+        function getResizedDimensions(width, height) {
+            const maxSize = 1920 * 1080; // Let's use a max size under 3 megapixels (adjust as needed)
+            const aspectRatio = width / height;
+
+            if (width * height <= maxSize) {
+                return { width, height };
+            }
+
+            if (aspectRatio > 1) {
+                width = Math.sqrt(maxSize * aspectRatio);
+                height = maxSize / width;
+            } else {
+                height = Math.sqrt(maxSize / aspectRatio);
+                width = maxSize / height;
+            }
+
+            return { width: Math.floor(width), height: Math.floor(height) };
+        }
 
         function processImage(img, numberOfSlices) {
             const sliceWidth = img.width / numberOfSlices;
