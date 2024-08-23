@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h1>Image Splitter v0.1.3</h1>
+    <h1>Image Splitter v0.1.2</h1>
     <p>Split the input image in the browser.</p>
     <form id="upload-form">
         <label for="file-input">Image:</label>
@@ -59,14 +59,9 @@
             }
 
             try {
+                const originalBlobUrl = URL.createObjectURL(file);
                 const img = new Image();
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                };
-                
-                reader.readAsDataURL(file);
+                img.src = originalBlobUrl;
 
                 img.onload = () => {
                     const sliceWidth = img.width / numberOfSlices;
@@ -82,6 +77,8 @@
                         const dataUrl = canvas.toDataURL('image/png');
                         renderImage(dataUrl, `slice-${i + 1}.png`);
                     }
+
+                    URL.revokeObjectURL(originalBlobUrl);
                 };
             } catch (error) {
                 console.error('Error during image processing:', error);
@@ -91,7 +88,6 @@
         function renderImage(dataUrl, filename) {
             const img = document.createElement('img');
             img.src = dataUrl;
-            img.alt = filename;  // Add an alt text to handle potential loading issues
             img.addEventListener('click', () => downloadImage(dataUrl, filename));
             imageContainer.appendChild(img);
         }
@@ -100,12 +96,16 @@
             const a = document.createElement('a');
             a.href = dataUrl;
             a.download = filename;
-            a.style.display = 'none';
 
-            // Append the anchor to the document and trigger the download
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            // Handling Safari - Create and click a fake link element
+            if (navigator.userAgent.match(/(iPad|iPhone|iPod)/g)) {
+                const newWindow = window.open(dataUrl, '_blank');
+                if (newWindow) {
+                    newWindow.document.title = filename;
+                }
+            } else {
+                a.click();
+            }
         }
     </script>
 </body>
