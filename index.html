@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h1>Image Splitter v0.1.1</h1>
+    <h1>Image Splitter v0.1.2</h1>
     <p>Split the input image in the browser.</p>
     <form id="upload-form">
         <label for="file-input">Image:</label>
@@ -63,77 +63,49 @@
                 const img = new Image();
                 img.src = originalBlobUrl;
 
-                await new Promise((resolve) => {
-                    img.onload = resolve;
-                });
+                img.onload = () => {
+                    const sliceWidth = img.width / numberOfSlices;
 
-                const sliceWidth = img.width / numberOfSlices;
-                for (let i = 0; i < numberOfSlices; i++) {
-                    const sliceBlob = await splitImageBlob(file, img, i * sliceWidth, sliceWidth);
-                    renderBlob(sliceBlob, `slice-${i + 1}.png`);
-                }
+                    for (let i = 0; i < numberOfSlices; i++) {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = sliceWidth;
+                        canvas.height = img.height;
 
-                URL.revokeObjectURL(originalBlobUrl);
+                        ctx.drawImage(img, i * sliceWidth, 0, sliceWidth, img.height, 0, 0, sliceWidth, img.height);
+
+                        const dataUrl = canvas.toDataURL('image/png');
+                        renderImage(dataUrl, `slice-${i + 1}.png`);
+                    }
+
+                    URL.revokeObjectURL(originalBlobUrl);
+                };
             } catch (error) {
                 console.error('Error during image processing:', error);
             }
         });
 
-        async function splitImageBlob(blob, img, startX, width) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error('Canvas context is not available');
-
-            canvas.width = width;
-            canvas.height = img.height;
-
-            ctx.drawImage(img, startX, 0, width, img.height, 0, 0, width, img.height);
-
-            return new Promise((resolve) => {
-                if (canvas.toBlob) {
-                    canvas.toBlob((newBlob) => {
-                        if (newBlob) {
-                            resolve(newBlob);
-                        } else {
-                            console.error('Failed to create blob.');
-                        }
-                    }, blob.type);
-                } else {
-                    // Fallback for Safari/iOS which might not support toBlob
-                    const dataUrl = canvas.toDataURL(blob.type);
-                    const newBlob = dataURLToBlob(dataUrl);
-                    resolve(newBlob);
-                }
-            });
-        }
-
-        function dataURLToBlob(dataURL) {
-            const byteString = atob(dataURL.split(',')[1]);
-            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-            const buffer = new ArrayBuffer(byteString.length);
-            const dataView = new Uint8Array(buffer);
-            for (let i = 0; i < byteString.length; i++) {
-                dataView[i] = byteString.charCodeAt(i);
-            }
-            return new Blob([buffer], { type: mimeString });
-        }
-
-        function renderBlob(blob, filename) {
+        function renderImage(dataUrl, filename) {
             const img = document.createElement('img');
-            const url = URL.createObjectURL(blob);
-            img.src = url;
-            img.addEventListener('click', () => downloadBlob(blob, filename));
+            img.src = dataUrl;
+            img.addEventListener('click', () => downloadImage(dataUrl, filename));
             imageContainer.appendChild(img);
         }
 
-        function downloadBlob(blob, filename) {
+        function downloadImage(dataUrl, filename) {
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
+            a.href = dataUrl;
             a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
+
+            // Handling Safari - Create and click a fake link element
+            if (navigator.userAgent.match(/(iPad|iPhone|iPod)/g)) {
+                const newWindow = window.open(dataUrl, '_blank');
+                if (newWindow) {
+                    newWindow.document.title = filename;
+                }
+            } else {
+                a.click();
+            }
         }
     </script>
 </body>
