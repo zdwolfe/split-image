@@ -84,6 +84,11 @@
             };
 
             reader.readAsDataURL(file);
+
+            gtag('event', 'submit', {
+                'event_category': 'Form',
+                'event_label': 'Image Splitter Form',
+            });
         });
 
         function getResizedDimensions(width, height) {
