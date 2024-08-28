@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Image Splitter - Easily split images into multiple parts directly in your browser. Useful for Threads Image Pinch To Merge.">
     <meta name="keywords" content="Image Splitter, Image Slicing, Online Tool, Image Processing, Threads Pinch, Threads, Threads Images, Instagram">
-
     <title>Image Splitter</title>
     <style>
         body {
@@ -26,23 +25,37 @@
     </style>
 </head>
 <body>
-    <h1>Image Splitter v0.1.6</h1>
-    <p>Split the input image in the browser.</p>
-    <form id="upload-form">
-        <label for="file-input">Image:</label>
-        <input type="file" id="file-input" accept="image/*" />
-        <br/><br/>
-        <label for="slice-input">Number of parts:</label>
-        <input type="number" id="slice-input" value="2" min="1" max="10" />
-        <br/><br/>
-        <button type="submit">Submit</button>
-    </form>
+    <div>
+        <h3>Image Splitter v0.1.7</h3>
+        <p>Split images in your browser, for Threads (Pinch Merge), Instagram, and other social media.</p>
+    </div>
+    
+    <div>
+        <form id="upload-form">
+            <label for="file-input">Image:</label>
+            <input type="file" id="file-input" accept="image/*" />
+
+            <br/><br/>
+
+            <label for="slice-input">Parts:</label>
+            <input type="number" id="slice-input" value="2" min="1" max="16" />
+            
+            <br/><br/>
+
+            <label for="watermark-input">
+                <input type="checkbox" id="watermark-input" />Add watermark <small>(share this site with your friends)?</small>
+            </label>
+            <br/><br/>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
 
     <div id="image-container"></div>
 
     <script>
         const fileInput = document.getElementById('file-input');
         const sliceInput = document.getElementById('slice-input');
+        const watermarkInput = document.getElementById('watermark-input');
         const uploadForm = document.getElementById('upload-form');
         const imageContainer = document.getElementById('image-container');
 
@@ -95,7 +108,7 @@
         });
 
         function getResizedDimensions(width, height) {
-            const maxSize = 1920 * 1080; // Let's use a max size under 3 megapixels (adjust as needed)
+            const maxSize = 1920 * 1080;
             const aspectRatio = width / height;
 
             if (width * height <= maxSize) {
@@ -115,6 +128,7 @@
 
         function processImage(img, numberOfSlices) {
             const sliceWidth = img.width / numberOfSlices;
+            const shouldWatermark = watermarkInput.checked;
 
             for (let i = 0; i < numberOfSlices; i++) {
                 const canvas = document.createElement('canvas');
@@ -123,6 +137,14 @@
                 canvas.height = img.height;
 
                 ctx.drawImage(img, i * sliceWidth, 0, sliceWidth, img.height, 0, 0, sliceWidth, img.height);
+
+                if (shouldWatermark && i === numberOfSlices - 1) {
+                    ctx.font = '10px Arial';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    const watermarkText = 'zdwolfe.github.io/split-image';
+                    const textMetrics = ctx.measureText(watermarkText);
+                    ctx.fillText(watermarkText, canvas.width - textMetrics.width - 2, canvas.height - 2);
+                }
 
                 const dataUrl = canvas.toDataURL('image/png');
                 renderImage(dataUrl, `slice-${i + 1}.png`);
