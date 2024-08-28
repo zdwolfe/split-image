@@ -9,7 +9,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0; 
+            padding: 0;
+        }
+        #main {
+            padding: 8px;
         }
         #image-container {
             display: flex;
@@ -29,8 +33,6 @@
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
             text-align: center;
-            padding: 10px;
-            font-size: 14px;
             z-index: 1000;
         }
         #cookie-banner a {
@@ -47,32 +49,35 @@
     </style>
 </head>
 <body>
-    <div>
-        <h3>Image Splitter v0.1.8</h3>
-        <p>Split images in your browser, for Threads (Pinch Merge), Instagram, and other social media.</p>
+    <div id="main">
+        <div>
+            <h3>Image Splitter v0.1.9</h3>
+            <p>Split wide images, all in your browser. Useful for Threads (Pinch Merge), Instagram, and other social media.</p>
+        </div>
+        
+        <div>
+            <form id="upload-form">
+                <label for="file-input">Image:</label>
+                <input type="file" id="file-input" accept="image/*" />
+
+                <br/><br/>
+
+                <label for="slice-input">Parts:</label>
+                <input type="number" id="slice-input" value="2" min="1" max="16" />
+                
+                <br/><br/>
+
+                <label for="watermark-input">
+                    <input type="checkbox" id="watermark-input" /> Add watermark <small>(advertise this site)?</small>
+                </label>
+                <br/><br/>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+
+        <div id="image-container"></div>
+
     </div>
-    
-    <div>
-        <form id="upload-form">
-            <label for="file-input">Image:</label>
-            <input type="file" id="file-input" accept="image/*" />
-
-            <br/><br/>
-
-            <label for="slice-input">Parts:</label>
-            <input type="number" id="slice-input" value="2" min="1" max="16" />
-            
-            <br/><br/>
-
-            <label for="watermark-input">
-                <input type="checkbox" id="watermark-input" checked /> Add watermark <small>(share this site with your friends)?</small>
-            </label>
-            <br/><br/>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-
-    <div id="image-container"></div>
 
     <!-- Cookie Banner -->
     <div id="cookie-banner">
@@ -167,7 +172,7 @@
                 if (shouldWatermark && i === numberOfSlices - 1) {
                     ctx.font = '10px Arial';
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                    const watermarkText = 'imagesplit.net';
+                    const watermarkText = 'zdwolfe.github.io/split-image/';
                     const textMetrics = ctx.measureText(watermarkText);
                     ctx.fillText(watermarkText, canvas.width - textMetrics.width - 2, canvas.height - 2);
                 }
