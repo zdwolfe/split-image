@@ -52,7 +52,7 @@
     <div id="main">
         <div>
             <h3>slice.pics: image slicing</h3>
-            <p>Slice wide images, all in your browser. Useful for Threads (Pinch Merge), Instagram, and other social media.</p>
+            <p>Slice wide images, all in your browser. Useful for Threads (Pinch Merge), Instagram, and other social media. <small>v1.0.1</small></p>
         </div>
         
         <div>
@@ -169,13 +169,21 @@
 
                 ctx.drawImage(img, i * sliceWidth, 0, sliceWidth, img.height, 0, 0, sliceWidth, img.height);
 
+
                 if (shouldWatermark && i === numberOfSlices - 1) {
-                    ctx.font = '10px Arial';
+                    ctx.font = '12px Arial';
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                     const watermarkText = 'slice.pics';
                     const textMetrics = ctx.measureText(watermarkText);
-                    ctx.fillText(watermarkText, canvas.width - textMetrics.width - 2, canvas.height - 2);
+                    const padding = 4;
+                    const fontHeight = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(canvas.width - textMetrics.width - padding, canvas.height - fontHeight - padding * 2, textMetrics.width + padding * 2, fontHeight + padding * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.fillText(watermarkText, canvas.width - textMetrics.width - padding + 2, canvas.height - padding - fontHeight / 4);
                 }
+
+
 
                 const dataUrl = canvas.toDataURL('image/png');
                 renderImage(dataUrl, `slice-${i + 1}.png`);
