@@ -22,11 +22,33 @@
             border: 1px solid #ccc;
             padding: 10px;
         }
+        #cookie-banner {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        #cookie-banner a {
+            color: lightblue;
+        }
+        #cookie-banner button {
+            margin-left: 15px;
+            padding: 5px 10px;
+            background-color: lightblue;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div>
-        <h3>Image Splitter v0.1.7</h3>
+        <h3>Image Splitter v0.1.8</h3>
         <p>Split images in your browser, for Threads (Pinch Merge), Instagram, and other social media.</p>
     </div>
     
@@ -43,7 +65,7 @@
             <br/><br/>
 
             <label for="watermark-input">
-                <input type="checkbox" id="watermark-input" />Add watermark <small>(share this site with your friends)?</small>
+                <input type="checkbox" id="watermark-input" checked /> Add watermark <small>(share this site with your friends)?</small>
             </label>
             <br/><br/>
             <button type="submit">Submit</button>
@@ -52,12 +74,21 @@
 
     <div id="image-container"></div>
 
+    <!-- Cookie Banner -->
+    <div id="cookie-banner">
+        This site uses cookies to enhance your experience. By continuing to use this site, you accept our use of cookies.
+        <a href="privacy.html">Privacy Policy</a>
+        <button id="accept-cookies">Accept</button>
+    </div>
+
     <script>
         const fileInput = document.getElementById('file-input');
         const sliceInput = document.getElementById('slice-input');
         const watermarkInput = document.getElementById('watermark-input');
         const uploadForm = document.getElementById('upload-form');
         const imageContainer = document.getElementById('image-container');
+        const cookieBanner = document.getElementById('cookie-banner');
+        const acceptCookiesButton = document.getElementById('accept-cookies');
 
         uploadForm.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -100,11 +131,6 @@
             };
 
             reader.readAsDataURL(file);
-
-            gtag('event', 'submit', {
-                'event_category': 'Form',
-                'event_label': 'Image Splitter Form',
-            });
         });
 
         function getResizedDimensions(width, height) {
@@ -141,7 +167,7 @@
                 if (shouldWatermark && i === numberOfSlices - 1) {
                     ctx.font = '10px Arial';
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                    const watermarkText = 'zdwolfe.github.io/split-image';
+                    const watermarkText = 'imagesplit.net';
                     const textMetrics = ctx.measureText(watermarkText);
                     ctx.fillText(watermarkText, canvas.width - textMetrics.width - 2, canvas.height - 2);
                 }
@@ -167,16 +193,33 @@
             a.click();
             document.body.removeChild(a);
         }
-    </script>
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FEZ8BJE1VJ"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
+        // Cookie consent functionality
+        acceptCookiesButton.addEventListener('click', () => {
+            document.cookie = "cookiesAccepted=true; max-age=31536000; path=/";
+            cookieBanner.style.display = 'none';
+            loadGoogleAnalytics();
+        });
 
-        gtag('config', 'G-FEZ8BJE1VJ');
+        function loadGoogleAnalytics() {
+            const script = document.createElement('script');
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=G-FEZ8BJE1VJ';
+            script.async = true;
+            document.head.appendChild(script);
+
+            script.onload = () => {
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-FEZ8BJE1VJ');
+            };
+        }
+
+        // Check if cookies are already accepted
+        if (document.cookie.indexOf('cookiesAccepted=true') > -1) {
+            cookieBanner.style.display = 'none';
+            loadGoogleAnalytics();
+        }
     </script>
 </body>
 </html>
