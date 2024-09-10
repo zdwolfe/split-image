@@ -104,6 +104,8 @@
                 return;
             }
 
+            const originalFilename = file.name.replace(/\.[^/.]+$/, "");
+            const fileExtension = file.name.split('.').pop();
             const numberOfSlices = parseInt(sliceInput.value);
             if (isNaN(numberOfSlices) || numberOfSlices < 1) {
                 return;
@@ -129,7 +131,7 @@
                     resizedImg.src = resizedDataUrl;
 
                     resizedImg.onload = function() {
-                        processImage(resizedImg, numberOfSlices);
+                        processImage(resizedImg, numberOfSlices, originalFilename, fileExtension);
                     };
                 };
             };
@@ -156,9 +158,8 @@
             return { width: Math.floor(width), height: Math.floor(height) };
         }
 
-        function processImage(img, numberOfSlices) {
+        function processImage(img, numberOfSlices, originalFilename, fileExtension) {
             const sliceWidth = img.width / numberOfSlices;
-
 
             for (let i = 0; i < numberOfSlices; i++) {
                 const canvas = document.createElement('canvas');
@@ -169,7 +170,8 @@
                 ctx.drawImage(img, i * sliceWidth, 0, sliceWidth, img.height, 0, 0, sliceWidth, img.height);
 
                 const dataUrl = canvas.toDataURL('image/png');
-                renderImage(dataUrl, `slice-${i + 1}.png`);
+                const paddedIndex = String(i + 1).padStart(2, '0');
+                renderImage(dataUrl, `${originalFilename}-${paddedIndex}.${fileExtension}`);
             }
         }
 
